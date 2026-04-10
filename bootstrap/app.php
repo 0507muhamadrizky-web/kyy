@@ -17,6 +17,28 @@ $app = new Illuminate\Foundation\Application(
 
 /*
 |--------------------------------------------------------------------------
+| Vercel Serverless: Redirect bootstrap cache to /tmp
+|--------------------------------------------------------------------------
+*/
+if (isset($_ENV['VERCEL']) || !is_writable($app->bootstrapPath('cache'))) {
+    $tmpBootstrapCache = '/tmp/bootstrap/cache';
+    if (!is_dir($tmpBootstrapCache)) {
+        mkdir($tmpBootstrapCache, 0755, true);
+    }
+    // Copy pre-built cache files to writable /tmp
+    $sourceCache = $app->bootstrapPath('cache');
+    foreach (['packages.php', 'services.php'] as $file) {
+        $src = $sourceCache . '/' . $file;
+        $dst = $tmpBootstrapCache . '/' . $file;
+        if (is_file($src) && !is_file($dst)) {
+            copy($src, $dst);
+        }
+    }
+    $app->useBootstrapPath('/tmp/bootstrap');
+}
+
+/*
+|--------------------------------------------------------------------------
 | Bind Important Interfaces
 |--------------------------------------------------------------------------
 |
