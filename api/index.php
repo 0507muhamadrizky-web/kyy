@@ -1,10 +1,10 @@
 <?php
 
-// Set the base path for Laravel
-$_ENV['APP_BASE_PATH'] = __DIR__ . '/..';
+// =============================================
+// Vercel Serverless Entry Point for Laravel
+// =============================================
 
-// On Vercel, the filesystem is read-only except /tmp
-// We need to redirect storage paths there
+// Storage configuration for Vercel's read-only filesystem
 $_ENV['APP_STORAGE'] = '/tmp/storage';
 $_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
 $_ENV['LOG_CHANNEL'] = 'stderr';
@@ -17,6 +17,7 @@ $dirs = [
     '/tmp/storage/framework',
     '/tmp/storage/framework/views',
     '/tmp/storage/framework/cache',
+    '/tmp/storage/framework/cache/data',
     '/tmp/storage/framework/sessions',
     '/tmp/storage/logs',
 ];
@@ -26,5 +27,27 @@ foreach ($dirs as $dir) {
     }
 }
 
-// Forward to Laravel's public index.php
-require __DIR__ . '/../public/index.php';
+// =============================================
+// Laravel Bootstrap (inlined from public/index.php)
+// =============================================
+
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
+
+define('LARAVEL_START', microtime(true));
+
+if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php')) {
+    require $maintenance;
+}
+
+require __DIR__ . '/../vendor/autoload.php';
+
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+
+$kernel = $app->make(Kernel::class);
+
+$response = $kernel->handle(
+    $request = Request::capture()
+)->send();
+
+$kernel->terminate($request, $response);
