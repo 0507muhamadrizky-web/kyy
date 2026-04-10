@@ -11,31 +11,45 @@
 |
 */
 
+/*
+|--------------------------------------------------------------------------
+| Vercel Serverless: Force /tmp for read-only filesystem
+|--------------------------------------------------------------------------
+*/
+if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
+    $tmpPaths = [
+        'APP_STORAGE' => '/tmp/storage',
+        'APP_SERVICES_CACHE' => '/tmp/cache/services.php',
+        'APP_PACKAGES_CACHE' => '/tmp/cache/packages.php',
+        'APP_CONFIG_CACHE' => '/tmp/cache/config.php',
+        'APP_ROUTES_CACHE' => '/tmp/cache/routes-v7.php',
+        'APP_EVENTS_CACHE' => '/tmp/cache/events.php',
+        'VIEW_COMPILED_PATH' => '/tmp/storage/framework/views',
+        'SESSION_DRIVER' => 'cookie',
+        'LOG_CHANNEL' => 'stderr',
+    ];
+    foreach ($tmpPaths as $key => $val) {
+        $_ENV[$key] = $val;
+        $_SERVER[$key] = $val;
+        putenv("$key=$val");
+    }
+    $dirs = [
+        '/tmp/storage/framework/views',
+        '/tmp/storage/framework/cache/data',
+        '/tmp/storage/framework/sessions',
+        '/tmp/storage/logs',
+        '/tmp/cache',
+    ];
+    foreach ($dirs as $dir) {
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+    }
+}
+
 $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
-
-/*
-|--------------------------------------------------------------------------
-| Vercel Serverless: Redirect bootstrap cache to /tmp
-|--------------------------------------------------------------------------
-*/
-if (isset($_ENV['VERCEL']) || !is_writable($app->bootstrapPath('cache'))) {
-    $tmpBootstrapCache = '/tmp/bootstrap/cache';
-    if (!is_dir($tmpBootstrapCache)) {
-        mkdir($tmpBootstrapCache, 0755, true);
-    }
-    // Copy pre-built cache files to writable /tmp
-    $sourceCache = $app->bootstrapPath('cache');
-    foreach (['packages.php', 'services.php'] as $file) {
-        $src = $sourceCache . '/' . $file;
-        $dst = $tmpBootstrapCache . '/' . $file;
-        if (is_file($src) && !is_file($dst)) {
-            copy($src, $dst);
-        }
-    }
-    $app->useBootstrapPath('/tmp/bootstrap');
-}
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +61,7 @@ if (isset($_ENV['VERCEL']) || !is_writable($app->bootstrapPath('cache'))) {
 | incoming requests to this application from both the web and CLI.
 |
 */
+
 
 $app->singleton(
     Illuminate\Contracts\Http\Kernel::class,
