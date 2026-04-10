@@ -1,12 +1,13 @@
 {
     "version": 2,
-    "outputDirectory": ".",
     "functions": {
-        "api/index.php": { "runtime": "vercel-php@0.7.3" }
+        "api/*.php": {
+            "runtime": "vercel-php@0.7.3"
+        }
     },
     "routes": [
         {
-            "src": "/(build|css|js|images|fonts)/(.*)",
+            "src": "/(css|js|build|images|fonts)/(.*)",
             "dest": "/public/$1/$2"
         },
         {
