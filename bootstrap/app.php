@@ -17,33 +17,36 @@
 |--------------------------------------------------------------------------
 */
 if (!is_writable(__DIR__ . '/cache') || isset($_ENV['VERCEL'])) {
-    $tmpPaths = [
-        'APP_STORAGE' => '/tmp/storage',
-        'APP_SERVICES_CACHE' => '/tmp/cache/services.php',
-        'APP_PACKAGES_CACHE' => '/tmp/cache/packages.php',
-        'APP_CONFIG_CACHE' => '/tmp/cache/config.php',
-        'APP_ROUTES_CACHE' => '/tmp/cache/routes-v7.php',
-        'APP_EVENTS_CACHE' => '/tmp/cache/events.php',
-        'VIEW_COMPILED_PATH' => '/tmp/storage/framework/views',
-        'SESSION_DRIVER' => 'cookie',
-        'LOG_CHANNEL' => 'stderr',
-    ];
-    foreach ($tmpPaths as $key => $val) {
-        $_ENV[$key] = $val;
-        $_SERVER[$key] = $val;
-        putenv("$key=$val");
-    }
+    // Create ALL /tmp directories FIRST, before anything else
     $dirs = [
+        '/tmp/bootstrap/cache',
         '/tmp/storage/framework/views',
         '/tmp/storage/framework/cache/data',
         '/tmp/storage/framework/sessions',
         '/tmp/storage/logs',
-        '/tmp/cache',
     ];
     foreach ($dirs as $dir) {
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
+    }
+
+    $tmpPaths = [
+        'APP_STORAGE' => '/tmp/storage',
+        'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
+        'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
+        'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
+        'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes-v7.php',
+        'APP_EVENTS_CACHE' => '/tmp/bootstrap/cache/events.php',
+        'VIEW_COMPILED_PATH' => '/tmp/storage/framework/views',
+        'SESSION_DRIVER' => 'cookie',
+        'LOG_CHANNEL' => 'stderr',
+        'CACHE_DRIVER' => 'array',
+    ];
+    foreach ($tmpPaths as $key => $val) {
+        $_ENV[$key] = $val;
+        $_SERVER[$key] = $val;
+        putenv("$key=$val");
     }
 }
 
@@ -51,10 +54,10 @@ $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
 
-// Fallback override in case Env variables are missed by Laravel's Env::get
+// Override paths for Vercel's read-only filesystem
 if (!is_writable(__DIR__ . '/cache') || isset($_ENV['VERCEL'])) {
     $app->useStoragePath('/tmp/storage');
-    $app->useBootstrapPath('/tmp');
+    $app->useBootstrapPath('/tmp/bootstrap');
 }
 
 /*
