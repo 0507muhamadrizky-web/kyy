@@ -4,19 +4,26 @@
 // Vercel Serverless Entry Point for Laravel
 // =============================================
 
-// Storage & cache configuration for Vercel's read-only filesystem
-$_ENV['APP_STORAGE'] = '/tmp/storage';
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
-$_ENV['LOG_CHANNEL'] = 'stderr';
-$_ENV['SESSION_DRIVER'] = 'cookie';
-$_ENV['CACHE_DRIVER'] = 'array';
+// Helper to set env for all methods Laravel uses to read them
+function setVercelEnv($key, $value) {
+    $_ENV[$key] = $value;
+    $_SERVER[$key] = $value;
+    putenv("$key=$value");
+}
 
-// Redirect all Laravel cache paths to /tmp
-$_ENV['APP_SERVICES_CACHE'] = '/tmp/cache/services.php';
-$_ENV['APP_PACKAGES_CACHE'] = '/tmp/cache/packages.php';
-$_ENV['APP_CONFIG_CACHE'] = '/tmp/cache/config.php';
-$_ENV['APP_ROUTES_CACHE'] = '/tmp/cache/routes-v7.php';
-$_ENV['APP_EVENTS_CACHE'] = '/tmp/cache/events.php';
+// Storage & cache for Vercel's read-only filesystem
+setVercelEnv('APP_STORAGE', '/tmp/storage');
+setVercelEnv('VIEW_COMPILED_PATH', '/tmp/storage/framework/views');
+setVercelEnv('LOG_CHANNEL', 'stderr');
+setVercelEnv('SESSION_DRIVER', 'cookie');
+setVercelEnv('CACHE_DRIVER', 'array');
+
+// Redirect ALL Laravel cache paths to /tmp
+setVercelEnv('APP_SERVICES_CACHE', '/tmp/cache/services.php');
+setVercelEnv('APP_PACKAGES_CACHE', '/tmp/cache/packages.php');
+setVercelEnv('APP_CONFIG_CACHE', '/tmp/cache/config.php');
+setVercelEnv('APP_ROUTES_CACHE', '/tmp/cache/routes-v7.php');
+setVercelEnv('APP_EVENTS_CACHE', '/tmp/cache/events.php');
 
 // Create necessary directories in /tmp
 $dirs = [
@@ -35,24 +42,14 @@ foreach ($dirs as $dir) {
     }
 }
 
-// Also ensure bootstrap/cache exists (symlink to /tmp)
-$bootstrapCache = __DIR__ . '/../bootstrap/cache';
-if (!is_dir($bootstrapCache)) {
-    @mkdir($bootstrapCache, 0755, true);
-}
-
 // =============================================
-// Laravel Bootstrap (inlined from public/index.php)
+// Laravel Bootstrap
 // =============================================
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
-
-if (file_exists($maintenance = __DIR__ . '/../storage/framework/maintenance.php')) {
-    require $maintenance;
-}
 
 require __DIR__ . '/../vendor/autoload.php';
 
