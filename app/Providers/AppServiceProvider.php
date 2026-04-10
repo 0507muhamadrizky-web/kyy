@@ -11,7 +11,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // On Vercel, redirect storage to /tmp (writable directory)
+        if (isset($_ENV['VERCEL']) || isset($_ENV['APP_STORAGE'])) {
+            $this->app->useStoragePath('/tmp/storage');
+        }
     }
 
     /**
