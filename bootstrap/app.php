@@ -16,7 +16,7 @@
 | Vercel Serverless: Force /tmp for read-only filesystem
 |--------------------------------------------------------------------------
 */
-if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
+if (!is_writable(__DIR__ . '/cache') || isset($_ENV['VERCEL'])) {
     $tmpPaths = [
         'APP_STORAGE' => '/tmp/storage',
         'APP_SERVICES_CACHE' => '/tmp/cache/services.php',
@@ -50,6 +50,12 @@ if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
 $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
+
+// Fallback override in case Env variables are missed by Laravel's Env::get
+if (!is_writable(__DIR__ . '/cache') || isset($_ENV['VERCEL'])) {
+    $app->useStoragePath('/tmp/storage');
+    $app->useBootstrapPath('/tmp');
+}
 
 /*
 |--------------------------------------------------------------------------
