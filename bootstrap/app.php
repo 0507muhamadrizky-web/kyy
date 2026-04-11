@@ -58,6 +58,20 @@ $app = new Illuminate\Foundation\Application(
 if (!is_writable(__DIR__ . '/cache') || isset($_ENV['VERCEL'])) {
     $app->useStoragePath('/tmp/storage');
     $app->useBootstrapPath('/tmp/bootstrap');
+
+    // CRITICAL: Re-register PackageManifest with the correct /tmp path.
+    // PackageManifest is created inside Application::__construct() via
+    // registerBaseBindings(), BEFORE Env::get() can read our env overrides
+    // (DotEnv repository isn't initialized yet). So it falls back to the
+    // default read-only bootstrap/cache path. We must replace it here.
+    $app->instance(
+        \Illuminate\Foundation\PackageManifest::class,
+        new \Illuminate\Foundation\PackageManifest(
+            new \Illuminate\Filesystem\Filesystem,
+            $app->basePath(),
+            '/tmp/bootstrap/cache/packages.php'
+        )
+    );
 }
 
 /*
