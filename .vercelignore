@@ -1,1 +1,16 @@
-public/index.php
+node_modules
+tests
+.git
+.env
+.env.example
+*.md
+*.sql
+*.txt
+*.bat
+phpunit.xml
+tailwind.config.js
+postcss.config.js
+vite.config.js
+package.json
+package-lock.json
+.editorconfig
